@@ -88,6 +88,7 @@
 #define PID_ENABLE    true      // enable PID control
 #define BEEP_ENABLE   true      // enable/disable buzzer
 #define MAINSCREEN    0         // type of main screen (0: big numbers; 1: more infos)
+#define DEFAULT_DISTANCE 150
 
 // EEPROM identifier
 #define EEPROM_IDENT   0xE76C   // to identify if EEPROM was written by this program
@@ -106,6 +107,7 @@ uint8_t   timeOfBoost = TIMEOFBOOST;
 uint8_t   MainScrType = MAINSCREEN;
 bool      PIDenable   = PID_ENABLE;
 bool      beepEnable  = BEEP_ENABLE;
+uint16_t  DefaultDistance = DEFAULT_DISTANCE;
 
 // Default values for tips
 uint16_t  CalTemp[TIPMAX][4] = {TEMP200, TEMP280, TEMP360, TEMPCHP};
@@ -136,6 +138,7 @@ const char *OffTimerItems[]    = { "Off Timer", "Minutes" };
 const char *BoostTimerItems[]  = { "Boost Timer", "Seconds" };
 const char *DeleteMessage[]    = { "Warning", "You cannot", "delete your", "last tip!" };
 const char *MaxTipMessage[]    = { "Warning", "You reached", "maximum number", "of tips!" };
+const char *DistanceItems[] = { "Set Distance", "dist" };
 
 // Variables for pin change interrupt
 volatile uint8_t  a0, b0, c0, d0;
@@ -319,7 +322,7 @@ void SENSORCheck() {
   HandleDistance = getHandleDistance() ;// get handle distance value
   
   bool oldIsOnStand = isOnStand;
-  isOnStand = HandleDistance >= 14 ? true : false; //check is handle on stand
+  isOnStand = HandleDistance >= DefaultDistance ? true : false; //check is handle on stand
   if (!oldIsOnStand&isOnStand){
     inBoostMode=false;
   }
@@ -434,9 +437,9 @@ void getEEPROM() {
     beepEnable  =  EEPROM.read(12);
     CurrentTip  =  EEPROM.read(13);
     NumberOfTips = EEPROM.read(14);
-
+    DefaultDistance = EEPROM.read(15);
     uint8_t i, j;
-    uint16_t counter = 15;
+    uint16_t counter = 16;
     for (i = 0; i < NumberOfTips; i++) {
       for (j = 0; j < TIPNAMELENGTH; j++) {
         TipName[i][j] = EEPROM.read(counter++);
@@ -469,9 +472,9 @@ void updateEEPROM() {
   EEPROM.update(12, beepEnable);
   EEPROM.update(13, CurrentTip);
   EEPROM.update(14, NumberOfTips);
-
+  EEPROM.update(15, DefaultDistance);
   uint8_t i, j;
-  uint16_t counter = 15;
+  uint16_t counter = 16;
   for (i = 0; i < NumberOfTips; i++) {
     for (j = 0; j < TIPNAMELENGTH; j++) EEPROM.update(counter++, TipName[i][j]);
     for (j = 0; j < 4; j++) {
@@ -552,6 +555,7 @@ void SetupScreen() {
       case 4:   MainScrType = MenuScreen(MainScreenItems, sizeof(MainScreenItems), MainScrType); break;
       case 5:   beepEnable = MenuScreen(BuzzerItems, sizeof(BuzzerItems), beepEnable); break;
       case 6:   InfoScreen(); break;
+      case 7:   DistanceScreen(); break;
       default:  repeat = false; break;
     }
   }  
@@ -719,6 +723,12 @@ void InfoScreen() {
   beep();
 }
 
+// distance display screen
+void DistanceScreen(){
+  setRotary(0, 1024, 1, DefaultDistance);
+  DefaultDistance = InputScreen(DistanceItems);
+  beep();
+}
 
 // change tip screen
 void ChangeTipScreen() {
@@ -829,7 +839,6 @@ void InputNameScreen() {
     beep(); delay (10);
   }
   TipName[CurrentTip][TIPNAMELENGTH - 1] = 0;
-  return value;
 }
 
 

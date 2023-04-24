@@ -44,7 +44,7 @@
 #include <avr/sleep.h>          // for sleeping during ADC sampling
 
 // Firmware version
-#define VERSION       "v1.7"
+#define VERSION       "v1.71"
 
 // Type of rotary encoder
 #define ROTARY_TYPE   1         // 0: 2 increments/step; 1: 4 increments/step (default)
@@ -69,9 +69,9 @@
 #define TEMP_STEP      10       // rotary encoder temp change steps
 
 // Default tip temperature calibration values
-#define TEMP200       268       // temperature at ADC = 200
-#define TEMP280       373       // temperature at ADC = 280
-#define TEMP360       480       // temperature at ADC = 360
+#define TEMP200       258       // temperature at ADC = 200
+#define TEMP280       357       // temperature at ADC = 280
+#define TEMP360       470       // temperature at ADC = 360
 #define TEMPCHP       30        // chip temperature while calibration
 #define TIPMAX        8         // max number of tips
 #define TIPNAMELENGTH 6         // max length of tip names (including termination)
@@ -88,7 +88,7 @@
 #define PID_ENABLE    true      // enable PID control
 #define BEEP_ENABLE   true      // enable/disable buzzer
 #define MAINSCREEN    0         // type of main screen (0: big numbers; 1: more infos)
-#define DEFAULT_DISTANCE 150
+#define DEFAULT_DISTANCE 10
 
 // EEPROM identifier
 #define EEPROM_IDENT   0xE76C   // to identify if EEPROM was written by this program
@@ -118,7 +118,7 @@ uint8_t   NumberOfTips = 1;
 // Menu items
 const char *SetupItems[]       = { "Setup Menu", "Tip Settings", "Temp Settings",
                                    "Timer Settings", "Control Type", "Main Screen",
-                                   "Buzzer", "Information", "Return" };
+                                   "Buzzer", "Information", "Sleep Senor Setting", "Return" };
 const char *TipItems[]         = { "Tip:", "Change Tip", "Calibrate Tip", 
                                    "Rename Tip", "Delete Tip", "Add new Tip", "Return" };
 const char *TempItems[]        = { "Temp Settings", "Default Temp", "Sleep Temp", 
@@ -839,6 +839,7 @@ void InputNameScreen() {
     beep(); delay (10);
   }
   TipName[CurrentTip][TIPNAMELENGTH - 1] = 0;
+  return value;
 }
 
 
@@ -950,9 +951,9 @@ ISR (PCINT0_vect) {
     a0 = a;
     if (b != b0) {            // B changed
       b0 = b;
-      count = constrain(count + ((a == b) ? countStep : -countStep), countMin, countMax);
+      count = constrain(count + ((a == b) ? -countStep : countStep), countMin, countMax);
       if (ROTARY_TYPE && ((a == b) != ab0)) {
-        count = constrain(count + ((a == b) ? countStep : -countStep), countMin, countMax);;
+        count = constrain(count + ((a == b) ? -countStep : countStep), countMin, countMax);;
       }
       ab0 = (a == b);
       handleMoved = true;
